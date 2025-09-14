@@ -4,22 +4,27 @@
 
 const router = require('express').Router();
 const RoomModel = require('../models/room.model')
+const DrawingCommand = require('../models/drawing.model');
+
 
 router.post('/rooms/join', async (req, res) => {
     try {
-        const { roomId } = req.body;
+        const { roomId, creating } = req.body;
 
         if (!roomId) return res.status(400).json({ message: "RoomId is required" })
 
         let room = await RoomModel.findOne({ roomId }).populate("drawingData");
 
-        if (!room) {
+        if (!creating) {
+            if (!room) return res.status(400).json({ message: 'Room not found' })
+            return res.status(200).json({ message: 'Room joined successfully', room });
+        }
+        if (!room && creating) {
             room = await RoomModel.create({ roomId })
-
             return res.status(201).json({ message: 'Room created successfully', room })
         }
 
-        return res.status(200).json({ message: 'Room joined successfully', room });
+        return res.status(400).json({ message: 'Room already exists' })
     } catch (error) {
         console.log("Error while creating/joining room", error.message);
         return res.status(500).json({ message: 'Internal server error' })
@@ -39,4 +44,6 @@ router.get('/rooms/:roomId', async (req, res) => {
         return res.status(500).json({ message: 'Internal server error' });
     }
 });
-module.exports = { router }
+
+
+module.exports = router 

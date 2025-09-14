@@ -41,6 +41,7 @@ io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId
     if (userId) {
         userSocketMap[userId] = socket.id
+        console.log(userId, socket.id)
     }
 
     socket.on("join-room", (roomId) => {
@@ -70,8 +71,8 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         delete userSocketMap[userId]
         let roomId = 1;
-        room.map(user => user.roomId == roomId).
-            filter(fuser => fuser.userId !== userSocketMap[userId])
+        // room.map(user => user.roomId == roomId).
+        //     filter(fuser => fuser.userId !== userSocketMap[userId])
 
         io.emit("getOnlineUsers", Object.keys(userSocketMap))
 

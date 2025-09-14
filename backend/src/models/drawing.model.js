@@ -18,5 +18,5 @@ const drawingSchema = mongoose.Schema({
         default: Date.now,
     },
 });
-const DrawingCommand = mongoose.model("DrawingModel",drawingSchema)
-module.exports = {DrawingCommand}
+const DrawingCommand = mongoose.model("DrawingCommand",drawingSchema)
+module.exports = DrawingCommand
