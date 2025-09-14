@@ -4,15 +4,16 @@ const cors = require('cors');
 require('dotenv').config();
 
 const mongoDB = require('./utils/db')
+const roomRouter = require('./routes/rooms.route')
+
 app.use(cors({
     origin: process.env.CLIENT_URL,
     credentials: true
 }))
-app.use(express.json())
 
-app.get('/', (req, res) => {
-    res.send("heelle")
-})
+app.use(express.json())
+app.use('/api',roomRouter)
+
 
 
 mongoDB()
