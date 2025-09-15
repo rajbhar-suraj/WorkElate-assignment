@@ -2,7 +2,8 @@ const http = require('http')
 require('dotenv').config()
 const express = require('express')
 const { Server } = require('socket.io');
-
+const Room = require("../models/room.model");
+const DrawingCommand = require("../models/drawing.model");
 
 const app = express()
 const server = http.createServer(app)
@@ -25,7 +26,6 @@ Socket Events:
 - 'clear-canvas'           // Clear entire canvas
 
 User count display
-
 */
 
 const userSocketMap = {}
@@ -33,18 +33,18 @@ const userSocketMap = {}
   room123: { user1: "socket1", user2: "socket2" },
   xyz456: { user3: "socket3" }
 };
-
-
 */
 const rooms = {}
 io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId
     if (userId) {
         userSocketMap[userId] = socket.id
-        console.log(userId, socket.id)
+        // console.log(userId, socket.id)
     }
 
-    socket.on("join-room", (roomId) => {
+
+    //room functionalities
+    socket.on("join-room", async (roomId) => {
         if (!rooms[roomId]) {
             rooms[roomId] = {}
         }
@@ -54,18 +54,46 @@ io.on("connection", (socket) => {
         socket.join(roomId)
 
         io.to(roomId).emit("roomUsers", Object.keys(rooms[roomId]));
+        const history = await DrawingCommand.find({ roomId }).sort({ timestamp: 1 });
+        io.emit("drawing-history", history);
     })
 
     socket.on("leave-room", (roomId) => {
-        if (rooms[roomId][userId]) {
-            delete rooms[roomId][userId]
+        console.log("leave the room")
+        // console.log(roomId)
+        if (rooms[roomId]) {
+            if (rooms[roomId][userId]) {
+                delete rooms[roomId][userId];
+            }
         }
+     
         socket.leave(roomId);
 
         // Emit updated users in this room
         io.to(roomId).emit("roomUsers", Object.keys(rooms[roomId]));
     })
 
+
+    //Canvas functionalities
+    socket.on("draw", async ({ roomId, data }) => {
+        // console.log(data, roomId)
+        await DrawingCommand.create({
+            roomId,
+            type: 'stroke',
+            data
+        })
+
+        io.to(roomId).emit('draw', data)
+    })
+
+    socket.on('clear-canvas', async (roomId) => {
+        await DrawingCommand.create({
+            roomId,
+            type: 'clear',
+            data: {},
+        });
+        io.to(roomId).emit('clear-canvas',{});
+    });
     io.emit("getOnlineUsers", Object.keys(userSocketMap))
 
     socket.on("disconnect", () => {

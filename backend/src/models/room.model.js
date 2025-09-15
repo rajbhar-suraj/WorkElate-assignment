@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 
 const roomSchema = mongoose.Schema({
-    roomId: {
+    roomName: {
         type: String,
         unique: true,
-        required:true
+        required:true,
+        min:6,
+        max:8
     },
     drawingData: [
         {

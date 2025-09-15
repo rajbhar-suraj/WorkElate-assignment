@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const drawingSchema = mongoose.Schema({
     roomId: {
         type: String,
-        required: true, // which room this command belongs to
+        required: true,
     },
     type: {
         type: String,
@@ -18,5 +18,6 @@ const drawingSchema = mongoose.Schema({
         default: Date.now,
     },
 });
+
 const DrawingCommand = mongoose.model("DrawingCommand",drawingSchema)
 module.exports = DrawingCommand

@@ -15,7 +15,8 @@ const axiosInstance = axios.create({
 
 const useFeatures = create(persist((set, get) => ({
 
-    roomId: null,
+    roomName: null,
+    roomId:null,
     roomUsers: [],
     drawingData: [],
     isCreatingRoom: false,
@@ -30,18 +31,15 @@ const useFeatures = create(persist((set, get) => ({
     setRoomJoin: (value) => set({ roomJoin: value }),
 
 
-    createAndJoinRoom: async (body) => {
-        if (body.creating) {
-            set({ isCreatingRoom: true })
-        } else {
-            set({ isJoiningRoom: true })
-        }
+    createAndJoinRoom: async (roomName) => {
+    
         try {
-            const res = await axiosInstance.post("/rooms/join", body)
-            set({ roomId: res.data.room.roomId })
+            const res = await axiosInstance.post("/rooms/join", {roomName})
+            console.log("create and join room",res)
+
+            set({ roomName: res.data.room.roomName,roomId:res.data.room._id })
             get().joinRoom()
             toast.success(res.data.message)
-            console.log(get().roomId)
         } catch (error) {
             set({ isJoiningRoom: false })
             set({ isCreatingRoom: false })
@@ -50,9 +48,11 @@ const useFeatures = create(persist((set, get) => ({
         }
     },
 
-    gettingRoomInfo: async (roomId) => {
+    gettingRoomInfo: async () => {
         set({ isGettingRoomInfo: true })
         try {
+            const {roomId} = get();
+            if(!roomId) return 
             const res = await axiosInstance.get(`/rooms/:${roomId}`)
             console.log(res.data)
 
@@ -100,12 +100,15 @@ const useFeatures = create(persist((set, get) => ({
 
     leaveRoom: () => {
         const { newSocket, roomId } = get();
+        console.log("leave room",newSocket,roomId)
         if (!newSocket || !roomId) return;
 
         newSocket.emit("leave-room", roomId); // tell server you are leaving
 
         // Clear local room data
-        set({ roomId: null, roomUsers: [] });
+        set({ roomId: null,roomName:null, roomUsers: [] });
+        toast.success("Room leaved successfully")
+
     },
 
 
@@ -132,6 +135,9 @@ const useFeatures = create(persist((set, get) => ({
         partialize: (state) => ({
             username: state.username,
             userId: state.userId,
+            roomUsers: state.roomusers,
+            roomName: state.roomName,
+            roomId: state.roomId
         }),
     }
 ))

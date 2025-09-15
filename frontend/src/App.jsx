@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import useFeatures from './store/Feature';
 
 const App = () => {
-  const { username, userId, initUser, connectSocket } = useFeatures();
+  const { userId, initUser, connectSocket } = useFeatures();
 
 
   useEffect(() => {
@@ -13,13 +13,13 @@ const App = () => {
   }, []);
   useEffect(() => {
     if (userId) {
-      connectSocket(); // only connect after userId exists
+      connectSocket(); 
     }
   }, [userId]);
   return (
     <>
       <Navbar />
-      <div className='bg-gray-100 h-screen'>
+      <div className="bg-gray-100 h-[calc(100vh-64px)]">
         <WhiteBoard />
       </div>
       <Toaster />

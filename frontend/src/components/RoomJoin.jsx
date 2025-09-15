@@ -4,38 +4,26 @@ import toast from "react-hot-toast";
 
 const RoomModal = () => {
   const { createAndJoinRoom } = useFeature()
-  const [roomId, setRoomId] = useState("");
+  const [roomName, setRoomName] = useState("");
   const [roomModal, setRoomModal] = useState(false);
-  const [mode, setMode] = useState("create"); // default is create room
 
-
-
+  function validateRoomName(name) {
+    // Only allow letters & numbers, at least 1 character
+    const regex = /^[a-zA-Z0-9]{6,8}$/;  // 6–12 chars allowed
+    return regex.test(name);
+  }
   const handleJoin = async () => {
-    if (!roomId) return toast.error("roomId is required")
-    console.log("Joining room:", roomId);
-
-    const body = {
-      roomId,
-      creating: false, 
-    };
-
-    await createAndJoinRoom(body); setRoomModal(false);
-    setMode("create");
-    setRoomId("");
-  };
-
-  const handleCreate = async () => {
-    if (!roomId) return toast.error("roomId is required")
-
-    console.log("Creating room:", roomId);
-    const body = {
-      roomId,
-      creating: true
+    if (!roomName) return toast.error("room-code is required")
+    if (!validateRoomName(roomName)) {
+      if(roomName.length > 8 || roomName.length < 6) return toast.error("room-code should be lesser than 8 & greater that 6")
+      toast.error("Room-code must be alphanumeric only!");
+      return;
     }
-    await createAndJoinRoom(body)
+    console.log("Creating room:", roomName);
+
+    await createAndJoinRoom(roomName)
     setRoomModal(false);
-    setMode("create");
-    setRoomId("");
+    setRoomName("");
   };
 
   return (
@@ -52,33 +40,20 @@ const RoomModal = () => {
       {roomModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-96">
-            {/* Mode = Create / Join form */}
-            <div className="flex flex-col">
-
-              <button
-                className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400 mb-3"
-                onClick={() =>
-                  setMode(mode === "create" ? "join" : "create")
-                }
-              >
-                {mode === "create" ? "Switch to Join" : "Switch to Create"}
-              </button>
-
+            <div className="flex flex-col ">
+              <span className="text-gray-600 text-center text-sm mb-1">Enter room name</span>
               <input
                 type="text"
                 placeholder={
-                  mode === "create" ? "Enter New Room Name" : "Enter Room ID"
+                  "alpha-numeric eg: abc123"
                 }
                 className="w-full border text-black border-zinc-900 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-900"
-                value={roomId}
-                onChange={(e) => setRoomId(e.target.value)}
+                value={roomName}
+                onChange={(e) => setRoomName(e.target.value)}
 
               />
 
               <div className="flex justify-between">
-                {/* Toggle between create/join */}
-
-
                 <div className="flex w-full justify-center items-center space-x-2">
                   <button
                     className="px-4 py-2 bg-zinc-700 text-white rounded hover:bg-gray-600"
@@ -87,16 +62,7 @@ const RoomModal = () => {
                     Cancel
                   </button>
 
-                  {mode === "create" && (
-                    <button
-                      className="px-6 py-2 bg-blue-700 text-white rounded hover:bg-blue-500"
-                      onClick={handleCreate}
-                    >
-                      Create
-                    </button>
-                  )}
-
-                  {mode === "join" && (
+                  {(
                     <button
                       className="px-6 py-2 bg-emerald-700 text-white rounded hover:bg-emerald-500"
                       onClick={handleJoin}
