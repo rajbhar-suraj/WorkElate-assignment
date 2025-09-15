@@ -19,7 +19,6 @@ const RoomModal = () => {
       toast.error("Room-code must be alphanumeric only!");
       return;
     }
-    console.log("Creating room:", roomName);
 
     await createAndJoinRoom(roomName)
     setRoomModal(false);

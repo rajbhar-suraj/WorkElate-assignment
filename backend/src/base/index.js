@@ -1,3 +1,4 @@
+//just normal stuff
 const rooms = [
     {
         room123: [

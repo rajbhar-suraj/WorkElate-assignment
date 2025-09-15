@@ -59,14 +59,13 @@ io.on("connection", (socket) => {
     })
 
     socket.on("leave-room", (roomId) => {
-        console.log("leave the room")
         // console.log(roomId)
         if (rooms[roomId]) {
             if (rooms[roomId][userId]) {
                 delete rooms[roomId][userId];
             }
         }
-     
+
         socket.leave(roomId);
 
         // Emit updated users in this room
@@ -75,7 +74,7 @@ io.on("connection", (socket) => {
 
 
     //Canvas functionalities
-    socket.on("draw", async ({ roomId, data }) => {
+    socket.on("draw-start", async ({ roomId, data }) => {
         // console.log(data, roomId)
         await DrawingCommand.create({
             roomId,
@@ -83,7 +82,30 @@ io.on("connection", (socket) => {
             data
         })
 
-        io.to(roomId).emit('draw', data)
+        io.to(roomId).emit('draw-start', data)
+
+    })
+
+    socket.on("draw-move", async ({ roomId, data }) => {
+        // console.log(data, roomId)
+        await DrawingCommand.create({
+            roomId,
+            type: 'stroke',
+            data
+        })
+
+        io.to(roomId).emit('draw-move', data)
+    })
+
+    socket.on("draw-end", async ({ roomId, data }) => {
+        // console.log(data, roomId)
+        await DrawingCommand.create({
+            roomId,
+            type: 'stroke',
+            data
+        })
+
+        io.to(roomId).emit('draw-end', data)
     })
 
     socket.on('clear-canvas', async (roomId) => {
@@ -92,7 +114,7 @@ io.on("connection", (socket) => {
             type: 'clear',
             data: {},
         });
-        io.to(roomId).emit('clear-canvas',{});
+        io.to(roomId).emit('clear-canvas', {});
     });
     io.emit("getOnlineUsers", Object.keys(userSocketMap))
 

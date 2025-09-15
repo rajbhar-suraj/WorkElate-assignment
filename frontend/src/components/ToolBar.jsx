@@ -15,6 +15,7 @@ const Toolbar = ({ color, setColor, strokeWidth, setStrokeWidth, clearCanvas }) 
         <button
           key={c}
           onClick={() => setColor(c)}
+          
           className={`w-10 h-8 rounded-md ${colorMap[c]} border-2 border-gray-300`}
         ></button>
       ))}

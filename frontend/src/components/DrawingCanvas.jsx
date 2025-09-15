@@ -30,12 +30,13 @@ const DrawingCanvas = () => {
     if (!newSocket || !roomId) return; // wait until socket and roomId exist
     // Join room
     newSocket.emit('join-room', roomId);
-
-    // Listen for drawing history
+    
+    // Listening for drawing history
     const handleHistory = (history) => {
       const ctx = canvasRef.current.getContext('2d');
+
       history.forEach(cmd => {
-        if (cmd.type === 'stroke') {
+        if (cmd.type === 'stroke' && cmd.data) {
           const { prevX, prevY, x, y, color, strokeWidth } = cmd.data;
           ctx.strokeStyle = color;
           ctx.lineWidth = strokeWidth;
@@ -55,36 +56,81 @@ const DrawingCanvas = () => {
     return () => {
       newSocket.off('drawing-history', handleHistory);
     };
-  }, [newSocket, roomId]); // <- run again when socket or roomId is ready
+  }, [newSocket, roomId]);
 
+  function trackCursor(e) {
+    if (!newSocket || !roomId) return;
 
- useEffect(() => {
-  if (!newSocket) return;
+    newSocket.emit("cursor-move", {
+      roomId,
+      data: {
+        x: e.nativeEvent.offsetX,
+        y: e.nativeEvent.offsetY,
+        userId: newSocket.id, // or some unique user ID
+        color, // optional: match cursor color with user’s pen
+      },
+    });
+  }
 
-  const handleDraw = (data) => {
+  // DRAW START
+  useEffect(() => {
+    if (!newSocket) return;
     const ctx = canvasRef.current.getContext("2d");
-    ctx.strokeStyle = data.color;
-    ctx.lineWidth = data.strokeWidth;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(data.prevX, data.prevY);
-    ctx.lineTo(data.x, data.y);
-    ctx.stroke();
-  };
 
-  const handleClear = () => {
+    const handleDrawStart = (data) => {
+      ctx.beginPath();
+      ctx.moveTo(data.x, data.y);
+      ctx.strokeStyle = data.color;
+      ctx.lineWidth = data.strokeWidth;
+      ctx.lineCap = "round";
+    };
+
+    newSocket.on("draw-start", handleDrawStart);
+    return () => newSocket.off("draw-start", handleDrawStart);
+  }, [newSocket]);
+
+  // DRAW MOVE
+  useEffect(() => {
+    if (!newSocket) return;
     const ctx = canvasRef.current.getContext("2d");
-    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-  };
 
-  newSocket.on("draw", handleDraw);
-  newSocket.on("clear-canvas", handleClear);
+    const handleDrawMove = (data) => {
+      ctx.beginPath();
+      ctx.moveTo(data.prevX, data.prevY);
+      ctx.lineTo(data.x, data.y);
+      ctx.strokeStyle = data.color;
+      ctx.lineWidth = data.strokeWidth;
+      ctx.lineCap = "round";
+      ctx.stroke();
+    };
 
-  return () => {
-    newSocket.off("draw", handleDraw);
-    newSocket.off("clear-canvas", handleClear);
-  };
-}, [newSocket]);
+    newSocket.on("draw-move", handleDrawMove);
+    return () => newSocket.off("draw-move", handleDrawMove);
+  }, [newSocket]);
+
+  // DRAW END
+  useEffect(() => {
+    if (!newSocket) return;
+    const ctx = canvasRef.current.getContext("2d");
+
+    const handleDrawEnd = () => ctx.closePath();
+
+    newSocket.on("draw-end", handleDrawEnd);
+    return () => newSocket.off("draw-end", handleDrawEnd);
+  }, [newSocket]);
+
+  // CLEAR CANVAS
+  useEffect(() => {
+    if (!newSocket) return;
+    const ctx = canvasRef.current.getContext("2d");
+
+    const handleClear = () => {
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    };
+
+    newSocket.on("clear-canvas", handleClear);
+    return () => newSocket.off("clear-canvas", handleClear);
+  }, [newSocket]);
 
 
   function clearCanvas() {
@@ -102,14 +148,15 @@ const DrawingCanvas = () => {
     ctx.lineCap = "round"
     ctx.beginPath()
     ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-    setIsDrawing(true);
-    if (!newSocket || !roomId) return; // wait for socket and roomId
 
-    newSocket.emit("draw", {
+    setIsDrawing(true);
+    setLastX(e.nativeEvent.offsetX);
+    setLastY(e.nativeEvent.offsetY);
+
+    if (!newSocket || !roomId) return;
+    newSocket.emit("draw-start", {
       roomId,
       data: {
-        prevX: e.nativeEvent.offsetX,
-        prevY: e.nativeEvent.offsetY,
         x: e.nativeEvent.offsetX,
         y: e.nativeEvent.offsetY,
         color,
@@ -122,28 +169,45 @@ const DrawingCanvas = () => {
   function draw(e) {
     if (!isDrawing) return;
     const ctx = canvasRef.current.getContext("2d");
-    ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+
+    const newX = e.nativeEvent.offsetX;
+    const newY = e.nativeEvent.offsetY;
+
+    // Draw clean segment
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);    // start from previous point
+    ctx.lineTo(newX, newY);      // draw to current point
+    ctx.strokeStyle = color;
+    ctx.lineWidth = strokeWidth;
+    ctx.lineCap = "round";
     ctx.stroke();
 
     if (!newSocket || !roomId) return;
 
-    newSocket.emit("draw", {
+    newSocket.emit("draw-move", {
       roomId,
       data: {
         prevX: lastX,
         prevY: lastY,
-        x: e.nativeEvent.offsetX,
-        y: e.nativeEvent.offsetY,
+        x: newX,
+        y: newY,
         color,
         strokeWidth,
       }
     });
-    setLastX(e.nativeEvent.offsetX);
-    setLastY(e.nativeEvent.offsetY);
+
+    setLastX(newX);
+    setLastY(newY);
   }
+
   function stopDrawing() {
     setIsDrawing(false);
+    if (!newSocket || !roomId) return;
 
+    newSocket.emit("draw-end", {
+      roomId,
+      data: {} // not much needed here, just to signal stroke completion
+    });
   }
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col">

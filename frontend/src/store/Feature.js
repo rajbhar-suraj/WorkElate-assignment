@@ -35,15 +35,12 @@ const useFeatures = create(persist((set, get) => ({
     
         try {
             const res = await axiosInstance.post("/rooms/join", {roomName})
-            console.log("create and join room",res)
-
             set({ roomName: res.data.room.roomName,roomId:res.data.room._id })
             get().joinRoom()
             toast.success(res.data.message)
         } catch (error) {
             set({ isJoiningRoom: false })
             set({ isCreatingRoom: false })
-            console.log(error)
             toast.error(error?.response?.data?.message)
         }
     },
@@ -54,11 +51,9 @@ const useFeatures = create(persist((set, get) => ({
             const {roomId} = get();
             if(!roomId) return 
             const res = await axiosInstance.get(`/rooms/:${roomId}`)
-            console.log(res.data)
 
         } catch (error) {
             set({ isGettingRoomInfo: false })
-            console.log(error?.message)
         }
     },
 
@@ -80,12 +75,10 @@ const useFeatures = create(persist((set, get) => ({
 
         // Listeners
         socket.on('getOnlineUsers', (online) => {
-            console.log("all online users count", online);
             set({ onlineUsers: online });
         });
 
         socket.on("roomUsers", (users) => {
-            console.log("Users in room:", users);
             set({ roomUsers: users });
         });
     },
@@ -100,7 +93,6 @@ const useFeatures = create(persist((set, get) => ({
 
     leaveRoom: () => {
         const { newSocket, roomId } = get();
-        console.log("leave room",newSocket,roomId)
         if (!newSocket || !roomId) return;
 
         newSocket.emit("leave-room", roomId); // tell server you are leaving
@@ -112,11 +104,11 @@ const useFeatures = create(persist((set, get) => ({
     },
 
 
-    // disconnectSocket: () => {
-    //     if (get().socket?.connected) {
-    //         get().socket.disconnect()
-    //     }
-    // },
+    disconnectSocket: () => {
+        if (get().socket?.connected) {
+            get().socket.disconnect()
+        }
+    },
 
     initUser: () => {
         const { username, userId } = get();

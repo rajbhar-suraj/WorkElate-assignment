@@ -5,17 +5,18 @@ import { useEffect } from 'react';
 import useFeatures from './store/Feature';
 
 const App = () => {
-  const { userId, initUser, connectSocket } = useFeatures();
-
-
+  const { userId, roomId, newSocket, initUser, connectSocket, disconnectSocket, joinRoom } = useFeatures();
+  useEffect(() => {
+    connectSocket()
+    return () => {
+      disconnectSocket()
+    }
+  }, [])
+  
   useEffect(() => {
     initUser(); // initialize user if not exists
   }, []);
-  useEffect(() => {
-    if (userId) {
-      connectSocket(); 
-    }
-  }, [userId]);
+
   return (
     <>
       <Navbar />
