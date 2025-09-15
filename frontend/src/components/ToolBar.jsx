@@ -12,13 +12,13 @@ const Toolbar = ({ color, setColor, strokeWidth, setStrokeWidth, clearCanvas }) 
       {/* Colors */}
       <div className="flex flex-row space-x-2 md:space-x-10  justify-evenly">
         {Object.keys(colorMap).map((c) => (
-        <button
-          key={c}
-          onClick={() => setColor(c)}
-          
-          className={`w-10 h-8 rounded-md ${colorMap[c]} border-2 border-gray-300`}
-        ></button>
-      ))}
+          <button
+            key={c}
+            onClick={() => setColor(c)}
+
+            className={`w-10 h-8 rounded-md border-2 ${color === c ? "ring-2 border-zinc-500" : "border-gray-300"
+              } ${colorMap[c]}`}></button>
+        ))}
       </div>
 
       {/* Stroke width */}

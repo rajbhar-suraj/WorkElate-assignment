@@ -72,65 +72,49 @@ const DrawingCanvas = () => {
     });
   }
 
+useEffect(() => {
+  if (!newSocket || !roomId) return;
+
+  const ctx = canvasRef.current.getContext("2d");
+
   // DRAW START
-  useEffect(() => {
-    if (!newSocket) return;
-    const ctx = canvasRef.current.getContext("2d");
-
-    const handleDrawStart = (data) => {
-      ctx.beginPath();
-      ctx.moveTo(data.x, data.y);
-      ctx.strokeStyle = data.color;
-      ctx.lineWidth = data.strokeWidth;
-      ctx.lineCap = "round";
-    };
-
-    newSocket.on("draw-start", handleDrawStart);
-    return () => newSocket.off("draw-start", handleDrawStart);
-  }, [newSocket]);
+  const handleDrawStart = (data) => {
+    ctx.beginPath();
+    ctx.moveTo(data.x, data.y);
+    ctx.strokeStyle = data.color;
+    ctx.lineWidth = data.strokeWidth;
+    ctx.lineCap = "round";
+  };
 
   // DRAW MOVE
-  useEffect(() => {
-    if (!newSocket) return;
-    const ctx = canvasRef.current.getContext("2d");
-
-    const handleDrawMove = (data) => {
-      ctx.beginPath();
-      ctx.moveTo(data.prevX, data.prevY);
-      ctx.lineTo(data.x, data.y);
-      ctx.strokeStyle = data.color;
-      ctx.lineWidth = data.strokeWidth;
-      ctx.lineCap = "round";
-      ctx.stroke();
-    };
-
-    newSocket.on("draw-move", handleDrawMove);
-    return () => newSocket.off("draw-move", handleDrawMove);
-  }, [newSocket]);
+  const handleDrawMove = (data) => {
+    ctx.strokeStyle = data.color;
+    ctx.lineWidth = data.strokeWidth;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(data.prevX, data.prevY);
+    ctx.lineTo(data.x, data.y);
+    ctx.stroke();
+  };
 
   // DRAW END
-  useEffect(() => {
-    if (!newSocket) return;
-    const ctx = canvasRef.current.getContext("2d");
-
-    const handleDrawEnd = () => ctx.closePath();
-
-    newSocket.on("draw-end", handleDrawEnd);
-    return () => newSocket.off("draw-end", handleDrawEnd);
-  }, [newSocket]);
+  const handleDrawEnd = () => ctx.closePath();
 
   // CLEAR CANVAS
-  useEffect(() => {
-    if (!newSocket) return;
-    const ctx = canvasRef.current.getContext("2d");
+  const handleClear = () => ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-    const handleClear = () => {
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    };
+  newSocket.on("draw-start", handleDrawStart);
+  newSocket.on("draw-move", handleDrawMove);
+  newSocket.on("draw-end", handleDrawEnd);
+  newSocket.on("clear-canvas", handleClear);
 
-    newSocket.on("clear-canvas", handleClear);
-    return () => newSocket.off("clear-canvas", handleClear);
-  }, [newSocket]);
+  return () => {
+    newSocket.off("draw-start", handleDrawStart);
+    newSocket.off("draw-move", handleDrawMove);
+    newSocket.off("draw-end", handleDrawEnd);
+    newSocket.off("clear-canvas", handleClear);
+  };
+}, [newSocket, roomId]);
 
 
   function clearCanvas() {

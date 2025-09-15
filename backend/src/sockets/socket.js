@@ -59,7 +59,7 @@ io.on("connection", (socket) => {
     })
 
     socket.on("leave-room", (roomId) => {
-        // console.log(roomId)
+        if(!roomId) return
         if (rooms[roomId]) {
             if (rooms[roomId][userId]) {
                 delete rooms[roomId][userId];
@@ -75,7 +75,7 @@ io.on("connection", (socket) => {
 
     //Canvas functionalities
     socket.on("draw-start", async ({ roomId, data }) => {
-        // console.log(data, roomId)
+        
         await DrawingCommand.create({
             roomId,
             type: 'stroke',

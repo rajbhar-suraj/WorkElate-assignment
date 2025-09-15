@@ -7,12 +7,12 @@ import useFeatures from './store/Feature';
 const App = () => {
   const { userId, roomId, newSocket, initUser, connectSocket, disconnectSocket, joinRoom } = useFeatures();
   useEffect(() => {
-    connectSocket()
-    return () => {
-      disconnectSocket()
+    if (userId) {
+      connectSocket()
+
     }
-  }, [])
-  
+  }, [userId])
+
   useEffect(() => {
     initUser(); // initialize user if not exists
   }, []);
